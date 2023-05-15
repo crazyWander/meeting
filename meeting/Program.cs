@@ -1,6 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using System.Globalization;
+﻿using System.Globalization;
 using meeting;
 
 internal class Program
@@ -42,8 +40,36 @@ internal class Program
                     break;
                 case "4":
                     break;
+                case "5":
+                    Console.WriteLine("Введите название файла");
+                    var fileName = Console.ReadLine();
+                    safeFile(fileName);
+                    break;
+                default:
+                    Console.WriteLine("Комменда не найдена");
+                    break;
             }
         }
+    }
+
+    private static void safeFile(string fileName)
+    {
+        if (!String.IsNullOrEmpty(fileName))
+        {
+            while (!File.Exists(fileName))
+            {
+                Console.WriteLine($"Файл не найден по пути: {Path.GetFullPath(fileName)}");
+
+                Console.WriteLine("Введите корректный путь к файлу: ");
+                fileName = Console.ReadLine();
+                    
+                if (String.IsNullOrEmpty(fileName))
+                {
+                    break;
+                }
+            }
+        }
+        _listMeeting.saveFile(fileName);
     }
 
     private static void UpdateMeeting()
@@ -70,14 +96,28 @@ internal class Program
         var isValidDate = false;
         while (!isValidDate)
         {
-            dateStart = setDateUpdate("Введите дату начала в формате dd.MM.yyyy HH:mm") ?? meeting._startDateTime;
-            dateEnd = setDateUpdate("Введите планируемую дату окончания в формате dd.MM.yyyy HH:mm") ?? meeting._endDateTime;
-            isValidDate = _listMeeting.isValidDate(dateStart, dateEnd);
+            dateStart = setDateNullable("Введите дату начала в формате dd.MM.yyyy HH:mm") ?? meeting._startDateTime;
+            dateEnd = setDateNullable("Введите планируемую дату окончания в формате dd.MM.yyyy HH:mm") ?? meeting._endDateTime;
+            isValidDate = _listMeeting.isValidDate(dateStart.Value, dateEnd.Value);
             if (!isValidDate)
             {
                 Console.WriteLine("Встречи пересекаются");
                 Console.WriteLine("Введите дату заного");
             }
+            else
+            {
+                meeting._startDateTime = dateStart.Value;
+                meeting._endDateTime = dateEnd.Value;
+            }
+            Console.WriteLine("Введите тему");
+            title = Console.ReadLine();
+            if (String.IsNullOrEmpty(title))
+                meeting.title = title;
+            
+            Console.WriteLine("Введите описание");
+            description = Console.ReadLine();
+            if (String.IsNullOrEmpty(description))
+                meeting.description = description;
         }
     }
 
@@ -93,8 +133,8 @@ internal class Program
         var isValidDate = false;
         while (!isValidDate)
         {
-            dateStart = setDateCreate("Введите дату начала в формате dd.MM.yyyy HH:mm");
-            dateEnd = setDateCreate("Введите планируемую дату окончания в формате dd.MM.yyyy HH:mm");
+            dateStart = setDate("Введите дату начала в формате dd.MM.yyyy HH:mm");
+            dateEnd = setDate("Введите планируемую дату окончания в формате dd.MM.yyyy HH:mm");
             isValidDate = _listMeeting.isValidDate(dateStart, dateEnd);
             if (!isValidDate)
             {
@@ -115,13 +155,13 @@ internal class Program
         Console.WriteLine("Введите описание");
         description = Console.ReadLine();
         Console.WriteLine("Введите время напоминания");
-        var timeNotification = setDateCreate("Введите дату напоминания");
+        var timeNotification = setDate("Введите дату напоминания");
 
-        var meeting = _listMeeting.addMeeting(dateStart, dateEnd, title, description, timeNotification);
+        _listMeeting.addMeeting(dateStart, dateEnd, title, description, timeNotification);
         
     }
 
-    static DateTime setDateCreate(string info)
+    static DateTime setDate(string info)
     {
         Console.WriteLine(info);
         var data = Console.ReadLine();
@@ -141,7 +181,7 @@ internal class Program
         return parsedData;
     }
     
-    static DateTime? setDateUpdate(string info)
+    static DateTime? setDateNullable(string info)
     {
         Console.WriteLine(info);
         var data = Console.ReadLine();

@@ -6,6 +6,8 @@ namespace meeting;
 public class ListMeeting
 {
     internal List<Meeting> listMeetings = new List<Meeting>();
+    private SaveManager _manager = new SaveManager();
+
     /// <summary>
     /// Добавление Встречи
     /// </summary>
@@ -71,6 +73,11 @@ public class ListMeeting
             return meeting;
         }
         return null;
+    }
+
+    public void saveFile(string path)
+    {
+        _manager.WriteDataToFileAsync(listMeetings, path);
     }
     
     DateTime parseData(string data)
