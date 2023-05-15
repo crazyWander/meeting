@@ -5,9 +5,16 @@ using meeting;
 
 internal class Program
 {
-    private static ListMeeting _listMeeting = new ListMeeting(); 
-    public static void Main(string[] args)
+    private static ListMeeting _listMeeting = new ListMeeting();
+
+    private static DateTime timeNotification
     {
+        get => _listMeeting.GetEarliestNotificationDate();
+    }
+
+    public static async Task Main(string[] args)
+    {
+        await CheckDateTimeAsync();
         Console.WriteLine("Запуск программы");
         while (true)
         {
@@ -22,14 +29,54 @@ internal class Program
             {
                 case "1":
                     Console.WriteLine(_listMeeting.getMeetingList());
+                    Console.WriteLine("Нажмите любую кнопку чтобы продолжить");
+                    Console.ReadKey();
                     break;
                 case "2":
                     CreateMeeting();
+                    Console.WriteLine("Нажмите любую кнопку чтобы продолжить");
+                    Console.ReadKey();
                     break;
                 case "3":
+                    UpdateMeeting();
                     break;
                 case "4":
                     break;
+            }
+        }
+    }
+
+    private static void UpdateMeeting()
+    {
+        bool isCorrect = true;
+        DateTime? dateStart;
+        DateTime? dateEnd;
+        string title = "";
+        string description = "";
+        Meeting meeting = null;
+        
+        Console.WriteLine("Введите ID встречи");
+        int id = 0;
+        while (Int32.TryParse(Console.ReadLine(), out id))
+        {
+            meeting = _listMeeting.getMeeting(id);
+            if (meeting == null)
+            {
+                Console.WriteLine("ID не найден");
+                return;
+            }
+        }
+        
+        var isValidDate = false;
+        while (!isValidDate)
+        {
+            dateStart = setDateUpdate("Введите дату начала в формате dd.MM.yyyy HH:mm") ?? meeting._startDateTime;
+            dateEnd = setDateUpdate("Введите планируемую дату окончания в формате dd.MM.yyyy HH:mm") ?? meeting._endDateTime;
+            isValidDate = _listMeeting.isValidDate(dateStart, dateEnd);
+            if (!isValidDate)
+            {
+                Console.WriteLine("Встречи пересекаются");
+                Console.WriteLine("Введите дату заного");
             }
         }
     }
@@ -43,11 +90,18 @@ internal class Program
         string description = "";
 
         Console.WriteLine("Создание встречи");
-
-        Console.WriteLine("Введите дату начала в формате dd.MM.yyyy HH:mm");
-        dateStart = setDate("Введите дату начала в формате dd.MM.yyyy HH:mm");
-        dateEnd = setDate("Введите планируемую дату окончания в формате dd.MM.yyyy HH:mm");
-        
+        var isValidDate = false;
+        while (!isValidDate)
+        {
+            dateStart = setDateCreate("Введите дату начала в формате dd.MM.yyyy HH:mm");
+            dateEnd = setDateCreate("Введите планируемую дату окончания в формате dd.MM.yyyy HH:mm");
+            isValidDate = _listMeeting.isValidDate(dateStart, dateEnd);
+            if (!isValidDate)
+            {
+                Console.WriteLine("Встречи пересекаются");
+                Console.WriteLine("Введите дату заного");
+            }
+        }
 
         Console.WriteLine("Введите тему");
         title = Console.ReadLine();
@@ -60,11 +114,14 @@ internal class Program
         
         Console.WriteLine("Введите описание");
         description = Console.ReadLine();
+        Console.WriteLine("Введите время напоминания");
+        var timeNotification = setDateCreate("Введите дату напоминания");
 
-        _listMeeting.addMeeting(dateStart, dateEnd, title, description);
+        var meeting = _listMeeting.addMeeting(dateStart, dateEnd, title, description, timeNotification);
+        
     }
 
-    static DateTime setDate(string info)
+    static DateTime setDateCreate(string info)
     {
         Console.WriteLine(info);
         var data = Console.ReadLine();
@@ -82,5 +139,37 @@ internal class Program
         }
 
         return parsedData;
+    }
+    
+    static DateTime? setDateUpdate(string info)
+    {
+        Console.WriteLine(info);
+        var data = Console.ReadLine();
+        DateTime parsedData;
+        if (DateTime.TryParseExact(data,
+                "dd.MM.yyyy HH:mm",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out parsedData))
+        {
+            return parsedData;
+        }
+
+        return null;
+    }
+    
+    private static async Task CheckDateTimeAsync()
+    {
+        while (true)
+        {
+            DateTime currentDateTime = DateTime.Now;
+
+            if (currentDateTime >= timeNotification)
+            {
+                Console.WriteLine("Напоминание, о встрече");
+            }
+            
+            await Task.Delay(TimeSpan.FromMinutes(1));
+        }
     }
 }

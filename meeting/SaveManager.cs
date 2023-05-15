@@ -1,4 +1,7 @@
 class SaveManager
 {
-    
+    void saveMeeting()
+    {
+        
+    }
 }
