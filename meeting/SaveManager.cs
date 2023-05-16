@@ -17,7 +17,6 @@ class SaveManager
         catch (Exception e)
         {
             Console.WriteLine("Произошла ошибка при выполнении программы");
-            throw;
         }
     }
 }

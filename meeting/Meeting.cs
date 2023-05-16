@@ -2,6 +2,8 @@ namespace meeting;
 
 public class Meeting
 {
+    //Переменная _guid названа так, в расчете на будущее
+    //(по хорошему для ID лучше использовать GUID, но пользователю вводить будет сложно)
     internal int _guid { get; }
     internal DateTime _startDateTime;
     internal DateTime _endDateTime;

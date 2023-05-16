@@ -15,7 +15,7 @@ public class ListMeeting
     /// <param name="dateEnd">Планируемая дата окончания dd.MM.yyyy HH:mm</param>
     /// <param name="title">Тема</param>
     /// <param name="description">Описание</param>
-    ///<returns>true - если добавлено успешно</returns>
+    ///<returns>Возвращает созданный и добавленный класс Meeting, или null в случае ошибки</returns>
     public Meeting addMeeting(DateTime dateStart, DateTime dateEnd, string title, string description, DateTime timeNotification)
     {
         var newMeeting = createMeeting(
@@ -25,12 +25,24 @@ public class ListMeeting
             description,
             timeNotification);
         
-        if(listMeetings.Count == 0 || isValidDate(listMeetings, newMeeting))
+        if(isValidDate(newMeeting))
         {
             listMeetings.Add(newMeeting);
             return newMeeting;
         }
         return null;
+    }
+
+    internal bool updateDateNotification(int id, DateTime dateTime)
+    {
+        Meeting meeting = listMeetings.Find(x => x._guid == id);
+        if (meeting != null)
+        {
+            meeting.editNotification(dateTime);
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -47,13 +59,33 @@ public class ListMeeting
 
         return listMeeting;
     }
-
-    void deleteMeeting(int id)
+    
+    internal StringBuilder getDayMeetingList(DateTime dateTime)
     {
-        listMeetings.RemoveAll(x => x._guid == id);
+        var dayMeeting = listMeetings.Where(x => x._startDateTime.Date == dateTime.Date).ToList();
+        StringBuilder listMeeting = new StringBuilder();
+        foreach (var meeting in dayMeeting)
+        {
+            listMeeting.Append(meeting);
+        }
+
+        return listMeeting;
     }
 
-    void updateMeeting(int id, DateTime? dateStart, DateTime? dateEnd, string title, string description)
+    internal int deleteMeeting(int id)
+    {
+        return listMeetings.RemoveAll(x => x._guid == id);
+    }
+
+    /// <summary>
+    /// Изменение данных встречи
+    /// </summary>
+    /// <param name="id">Обязательно, ID встречи</param>
+    /// <param name="dateStart">Дата начала (Пусто, если без изменения)</param>
+    /// <param name="dateEnd">Дата окончания (Пусто, если без изменения)</param>
+    /// <param name="title">Тема встречи (Пусто, если без изменения)</param>
+    /// <param name="description">Описание (Пусто, если без изменения)</param>
+    internal Meeting updateMeeting(int id, DateTime? dateStart, DateTime? dateEnd, string title, string description)
     {
         Meeting meeting = listMeetings.Find(x => x._guid == id);
         if (meeting != null)
@@ -63,6 +95,7 @@ public class ListMeeting
             if (String.IsNullOrEmpty(title)) meeting.title = title;
             if (String.IsNullOrEmpty(description)) meeting.description = description;
         }
+        return meeting;
     }
 
     public Meeting? getMeeting(int guid)
@@ -91,47 +124,28 @@ public class ListMeeting
     /// <param name="listMeeting">Существующий список</param>
     /// <param name="newMeeting">Проверяемая встреча</param>
     /// <returns></returns>
-    internal bool isValidDate(List<Meeting> listMeeting, Meeting newMeeting)
+    internal bool isValidDate(Meeting newMeeting)
     {
         if (listMeetings.Count == 0)
             return true;
-        return listMeetings.Any(
+        return !listMeetings.Any(
             m =>
-                (m._startDateTime >= newMeeting._startDateTime
-                 && newMeeting._startDateTime < m._endDateTime)
-                || (newMeeting._endDateTime > m._startDateTime
-                    && newMeeting._endDateTime <= m._endDateTime)
+                (newMeeting._startDateTime >= m._startDateTime && newMeeting._startDateTime < m._endDateTime) ||
+                (newMeeting._endDateTime > m._startDateTime && newMeeting._endDateTime <= m._endDateTime) ||
+                (newMeeting._startDateTime <= m._startDateTime && newMeeting._endDateTime >= m._endDateTime)
         );
     }
 
-    internal bool isValidDate(DateTime dateTimeStart, DateTime dateTimeEnd)
+    internal bool isValidDate(DateTime dateTimeStart, DateTime dateTimeEnd, Meeting meeting = null)
     {
-        if (listMeetings.Count == 0)
-            return true;
-        
-        return !listMeetings.Any(m =>
+        if (dateTimeStart > dateTimeEnd) return false;
+        if (listMeetings.Count == 0) return true;
+
+        return !listMeetings.Where(m => (m != meeting) && (listMeetings.Count > 1)).Any(m =>
                 (dateTimeStart >= m._startDateTime && dateTimeStart < m._endDateTime) ||
                 (dateTimeEnd > m._startDateTime && dateTimeEnd <= m._endDateTime) ||
                 (dateTimeStart <= m._startDateTime && dateTimeEnd >= m._endDateTime)
             );
-    }
-
-    void addNotification(DateTime dateTimeNotifocation, int guid)
-    {
-        Meeting meeting = listMeetings.Find(x => x._guid == guid);
-        if (meeting != null)
-        {
-            meeting.addNotification(dateTimeNotifocation);
-        }
-    }
-
-    void editNotification(DateTime dateTimeNotifocation, int guid)
-    {
-        Meeting meeting = listMeetings.Find(n => n._guid == guid);
-        if (meeting != null)
-        {
-            meeting.editNotification(dateTimeNotifocation);
-        }
     }
 
     /// <summary>
@@ -147,7 +161,7 @@ public class ListMeeting
         var id = 1;
         if (listMeetings.Count > 1)
         {
-            id = listMeetings[listMeetings.Count]._guid + 1;
+            id = listMeetings[listMeetings.Count-1]._guid + 1;
         }
         return new Meeting(
             id,
@@ -163,7 +177,7 @@ public class ListMeeting
 
         if (listMeetings.Count == 0)
         {
-            // Если список встреч пуст, вернуть значение по умолчанию
+            // Если список встреч пуст, вернуть значение по умолчанию, не
             return DateTime.MinValue;
         }
 
