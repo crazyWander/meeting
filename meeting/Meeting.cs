@@ -4,44 +4,47 @@ public class Meeting
 {
     //Переменная _guid названа так, в расчете на будущее
     //(по хорошему для ID лучше использовать GUID, но пользователю вводить будет сложно)
-    internal int _guid { get; }
-    internal DateTime _startDateTime;
-    internal DateTime _endDateTime;
-    internal string title;
-    internal string description;
-    internal DateTime _notification;
+    internal int Guid { get; }
+    internal DateTime StartDateTime;
+    internal DateTime EndDateTime;
+    internal string Title;
+    internal string Description;
+    internal DateTime Notification;
 
-    public Meeting(int id, DateTime startDateTime, DateTime endDateTime, string title, string description, DateTime timeNotification)
+    public Meeting(int id, DateTime startDateTime, DateTime endDateTime, string title, string description,
+        DateTime timeNotification)
     {
-        _guid = id;
-        _startDateTime = startDateTime;
-        _endDateTime = endDateTime;
-        this.title = title;
-        this.description = description;
-        _notification = timeNotification;
+        Guid = id;
+        StartDateTime = startDateTime;
+        EndDateTime = endDateTime;
+        Title = title;
+        Description = description;
+        Notification = timeNotification;
     }
-    
+
 
     public override string ToString()
     {
         return $"""
             -----------------------------------
-            ID - {_guid}
-            Начало встречи - {_startDateTime}
-            Окончанее встрече - {_endDateTime}
-            Тема - {title}
+            ID - {Guid}
+            Начало встречи - {StartDateTime}
+            Окончанее встрече - {EndDateTime}
+            Тема - {Title}
             Описание
-            {description}
+            {Description}
+            Напоминание - {Notification}
+
             """;
     }
 
     internal void editNotification(DateTime dateTimeNotifocation)
     {
-        _notification = dateTimeNotifocation;
+        Notification = dateTimeNotifocation;
     }
-    
+
     public void addNotification(DateTime dateTimeNotifocation)
     {
-        _notification = dateTimeNotifocation;
+        Notification = dateTimeNotifocation;
     }
 }

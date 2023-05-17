@@ -16,26 +16,28 @@ public class ListMeeting
     /// <param name="title">Тема</param>
     /// <param name="description">Описание</param>
     ///<returns>Возвращает созданный и добавленный класс Meeting, или null в случае ошибки</returns>
-    public Meeting addMeeting(DateTime dateStart, DateTime dateEnd, string title, string description, DateTime timeNotification)
+    public Meeting addMeeting(DateTime dateStart, DateTime dateEnd, string title, string description,
+        DateTime timeNotification)
     {
         var newMeeting = createMeeting(
             dateStart,
             dateEnd,
-            title, 
+            title,
             description,
             timeNotification);
-        
-        if(isValidDate(newMeeting))
+
+        if (isValidDate(newMeeting))
         {
             listMeetings.Add(newMeeting);
             return newMeeting;
         }
+
         return null;
     }
 
     internal bool updateDateNotification(int id, DateTime dateTime)
     {
-        Meeting meeting = listMeetings.Find(x => x._guid == id);
+        Meeting meeting = listMeetings.Find(x => x.Guid == id);
         if (meeting != null)
         {
             meeting.editNotification(dateTime);
@@ -59,10 +61,10 @@ public class ListMeeting
 
         return listMeeting;
     }
-    
+
     internal StringBuilder getDayMeetingList(DateTime dateTime)
     {
-        var dayMeeting = listMeetings.Where(x => x._startDateTime.Date == dateTime.Date).ToList();
+        var dayMeeting = listMeetings.Where(x => x.StartDateTime.Date == dateTime.Date).ToList();
         StringBuilder listMeeting = new StringBuilder();
         foreach (var meeting in dayMeeting)
         {
@@ -74,7 +76,7 @@ public class ListMeeting
 
     internal int deleteMeeting(int id)
     {
-        return listMeetings.RemoveAll(x => x._guid == id);
+        return listMeetings.RemoveAll(x => x.Guid == id);
     }
 
     /// <summary>
@@ -87,24 +89,26 @@ public class ListMeeting
     /// <param name="description">Описание (Пусто, если без изменения)</param>
     internal Meeting updateMeeting(int id, DateTime? dateStart, DateTime? dateEnd, string title, string description)
     {
-        Meeting meeting = listMeetings.Find(x => x._guid == id);
+        Meeting meeting = listMeetings.Find(x => x.Guid == id);
         if (meeting != null)
         {
-            if(dateStart != null) meeting._startDateTime = dateStart.Value;
-            if (dateEnd != null) meeting._endDateTime = dateEnd.Value;
-            if (String.IsNullOrEmpty(title)) meeting.title = title;
-            if (String.IsNullOrEmpty(description)) meeting.description = description;
+            if (dateStart != null) meeting.StartDateTime = dateStart.Value;
+            if (dateEnd != null) meeting.EndDateTime = dateEnd.Value;
+            if (String.IsNullOrEmpty(title)) meeting.Title = title;
+            if (String.IsNullOrEmpty(description)) meeting.Description = description;
         }
+
         return meeting;
     }
 
     public Meeting? getMeeting(int guid)
     {
-        var meeting = listMeetings.Find(x => x._guid == guid);
+        var meeting = listMeetings.Find(x => x.Guid == guid);
         if (meeting != null)
         {
             return meeting;
         }
+
         return null;
     }
 
@@ -112,7 +116,7 @@ public class ListMeeting
     {
         _manager.WriteDataToFileAsync(listMeetings, path);
     }
-    
+
     DateTime parseData(string data)
     {
         return DateTime.ParseExact(data, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture);
@@ -130,22 +134,22 @@ public class ListMeeting
             return true;
         return !listMeetings.Any(
             m =>
-                (newMeeting._startDateTime >= m._startDateTime && newMeeting._startDateTime < m._endDateTime) ||
-                (newMeeting._endDateTime > m._startDateTime && newMeeting._endDateTime <= m._endDateTime) ||
-                (newMeeting._startDateTime <= m._startDateTime && newMeeting._endDateTime >= m._endDateTime)
+                (newMeeting.StartDateTime >= m.StartDateTime && newMeeting.StartDateTime < m.EndDateTime) ||
+                (newMeeting.EndDateTime > m.StartDateTime && newMeeting.EndDateTime <= m.EndDateTime) ||
+                (newMeeting.StartDateTime <= m.StartDateTime && newMeeting.EndDateTime >= m.EndDateTime)
         );
     }
 
-    internal bool isValidDate(DateTime dateTimeStart, DateTime dateTimeEnd, Meeting meeting = null)
+    internal bool isValidDate(DateTime dateTimeStart, DateTime dateTimeEnd, Meeting? meeting = null)
     {
         if (dateTimeStart > dateTimeEnd) return false;
         if (listMeetings.Count == 0) return true;
 
         return !listMeetings.Where(m => (m != meeting) && (listMeetings.Count > 1)).Any(m =>
-                (dateTimeStart >= m._startDateTime && dateTimeStart < m._endDateTime) ||
-                (dateTimeEnd > m._startDateTime && dateTimeEnd <= m._endDateTime) ||
-                (dateTimeStart <= m._startDateTime && dateTimeEnd >= m._endDateTime)
-            );
+            (dateTimeStart >= m.StartDateTime && dateTimeStart < m.EndDateTime) ||
+            (dateTimeEnd > m.StartDateTime && dateTimeEnd <= m.EndDateTime) ||
+            (dateTimeStart <= m.StartDateTime && dateTimeEnd >= m.EndDateTime)
+        );
     }
 
     /// <summary>
@@ -156,13 +160,15 @@ public class ListMeeting
     /// <param name="title"></param>
     /// <param name="description"></param>
     /// <returns></returns>
-    Meeting createMeeting(DateTime dateStart, DateTime dateEnd, string title, string description, DateTime timeNotification)
+    Meeting createMeeting(DateTime dateStart, DateTime dateEnd, string title, string description,
+        DateTime timeNotification)
     {
         var id = 1;
-        if (listMeetings.Count > 1)
+        if (listMeetings.Count > 0)
         {
-            id = listMeetings[listMeetings.Count-1]._guid + 1;
+            id = listMeetings[listMeetings.Count - 1].Guid + 1;
         }
+
         return new Meeting(
             id,
             dateStart,
@@ -171,19 +177,21 @@ public class ListMeeting
             timeNotification);
     }
 
-    internal DateTime GetEarliestNotificationDate()
+    internal Meeting GetEarliestNotificationDate()
     {
-        DateTime now = DateTime.Now;
+        //Вычитается минута
+        DateTime now = DateTime.Now.AddMinutes(-1);
 
         if (listMeetings.Count == 0)
         {
             // Если список встреч пуст, вернуть значение по умолчанию, не
-            return DateTime.MinValue;
+            return null;
         }
 
-        DateTime earliestDate = listMeetings
-            .Where(m => m._notification >= now)
-            .Min(m => m._notification);
+        Meeting earliestDate = listMeetings
+            .Where(m => m.Notification >= now)
+            .OrderBy(m => m.Notification)
+            .FirstOrDefault();
 
         return earliestDate;
     }
